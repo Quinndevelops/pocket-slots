@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Pocket Slots+</title>
+  <style>
+    :root{
+      --bg:#070a12;
+      --ink:#e9ecff;
+      --muted:#a9b0d6;
+      --accent:#5ee1ff;
+      --good:#34f59a;
+      --bad:#ff4d7d;
+      --warn:#ffd166;
+      --shadow: 0 18px 40px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:
+        radial-gradient(900px 500px at 20% -10%, rgba(94,225,255,.18), transparent 55%),
+        radial-gradient(700px 450px at 85% 10%, rgba(255,77,125,.15), transparent 55%),
+        radial-gradient(800px 500px at 40% 120%, rgba(52,245,154,.12), transparent 55%),
+        var(--bg);
+      color:var(--ink);
+      -webkit-tap-highlight-color: transparent;
+      padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .app{ width:min(520px, 100%); display:flex; flex-direction:column; gap:14px; }
+    .top{ display:flex; gap:12px; }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .stats{ flex:1; padding:14px; display:flex; flex-direction:column; gap:10px; }
+    .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .label{ color:var(--muted); font-size:12px; letter-spacing:.2px }
+    .value{ font-weight:800; font-size:18px }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius: 999px;
+      background: rgba(94,225,255,.08);
+      border: 1px solid rgba(94,225,255,.20);
+      font-weight:700;
+    }
+    .pill small{ color:var(--muted); font-weight:650 }
+    .rightMini{ width: 160px; padding:14px; display:flex; flex-direction:column; gap:10px; justify-content:space-between; }
+    .toggle{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 12px; border-radius:14px;
+      background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+    }
+    .switch{
+      width:46px; height:28px; border-radius:999px;
+      background: rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.14);
+      position:relative; flex:0 0 auto;
+    }
+    .knob{
+      width:22px; height:22px; border-radius:50%;
+      position:absolute; top:2px; left:2px;
+      background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.55));
+      box-shadow: 0 10px 18px rgba(0,0,0,.35);
+      transition: transform .18s ease;
+    }
+    .switch.on{ background: rgba(52,245,154,.16); border-color: rgba(52,245,154,.35); }
+    .switch.on .knob{ transform: translateX(18px); }
+
+    .machine{ padding: 14px; }
+    .machineHeader{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .title{ font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:10px; font-size:16px; }
+    .title .dot{ width:10px; height:10px; background: var(--accent); border-radius:50%; box-shadow: 0 0 0 6px rgba(94,225,255,.12); }
+    .msg{ font-size:13px; color: var(--muted); text-align:right; min-height: 18px; max-width: 60%; }
+    .msg.win{ color: var(--good); }
+    .msg.lose{ color: var(--bad); }
+    .msg.warn{ color: var(--warn); }
+
+    .reelsWrap{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      padding: 12px;
+    }
+    .reels{ display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+    .reel{
+      position:relative; height: 108px; border-radius: 16px;
+      background: radial-gradient(120px 70px at 50% 0%, rgba(94,225,255,.12), transparent 60%),
+                  linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.08);
+      overflow:hidden; display:flex; align-items:center; justify-content:center;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
+    }
+    .symbol{
+      font-size: 54px;
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.35));
+      transition: transform .2s ease, filter .2s ease;
+      user-select:none;
+    }
+    .reel::before{
+      content:"";
+      position:absolute; inset:0;
+      background: linear-gradient(180deg, rgba(0,0,0,.55), transparent 18%, transparent 82%, rgba(0,0,0,.55));
+      pointer-events:none;
+      opacity:.45;
+    }
+
+    .metaRow{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+      color: var(--muted);
+      font-size:12px;
+    }
+    .meta{
+      padding:10px 10px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      min-width:0;
+    }
+    .meta b{ color: var(--ink); }
+    .meta small{ color: var(--muted); font-weight:650; }
+
+    .controls{ display:flex; flex-direction:column; gap:10px; padding: 14px; }
+    .betRow{ display:flex; gap:10px; align-items:stretch; }
+    .btn{
+      border:0; border-radius: 16px;
+      padding: 14px 14px;
+      font-weight:900; font-size:15px;
+      color: var(--ink);
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+      touch-action: manipulation;
+      user-select:none;
+      transition: transform .08s ease, filter .15s ease, background .15s ease;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); filter: brightness(1.08); }
+    .btn.primary{ background: linear-gradient(180deg, rgba(94,225,255,.22), rgba(94,225,255,.12)); border-color: rgba(94,225,255,.35); }
+    .btn.bad{ background: linear-gradient(180deg, rgba(255,77,125,.22), rgba(255,77,125,.10)); border-color: rgba(255,77,125,.35); }
+    .btn.small{ padding: 12px 12px; font-size: 13px; border-radius: 14px; font-weight:850; }
+    .btn.wide{ flex:1; }
+    .btn.icon{ width: 58px; display:flex; align-items:center; justify-content:center; font-size:18px; flex:0 0 auto; }
+
+    .betBox{
+      flex:1; padding: 12px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+      display:flex; flex-direction:column; justify-content:center; gap:4px;
+      min-width: 0;
+    }
+    .betBox .big{
+      font-size: 18px; font-weight:950;
+      display:flex; align-items:baseline; gap:10px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .betBox .big span{ color: var(--muted); font-weight:800; font-size: 12px; }
+
+    .quick{ display:flex; gap:10px; }
+    .quick .btn{ flex:1; }
+
+    .footer{
+      padding: 12px 14px;
+      color: rgba(233,236,255,.75);
+      font-size: 12px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      opacity:.95;
+    }
+    .footer .hint{ color: var(--muted); }
+
+    .shake{ animation: shake .35s ease; }
+    @keyframes shake{
+      0%{transform:translateX(0)}
+      20%{transform:translateX(-6px)}
+      40%{transform:translateX(6px)}
+      60%{transform:translateX(-4px)}
+      80%{transform:translateX(4px)}
+      100%{transform:translateX(0)}
+    }
+
+    .spin{ animation: spin .55s linear infinite; }
+    @keyframes spin{
+      0%{ transform: translateY(-34px); filter: blur(.2px) drop-shadow(0 10px 14px rgba(0,0,0,.35)); }
+      50%{ transform: translateY(34px); filter: blur(.8px) drop-shadow(0 12px 18px rgba(0,0,0,.35)); }
+      100%{ transform: translateY(-34px); filter: blur(.2px) drop-shadow(0 10px 14px rgba(0,0,0,.35)); }
+    }
+
+    .winPulse{ animation: pulse .6s ease; }
+    @keyframes pulse{
+      0%{transform:scale(1)}
+      40%{transform:scale(1.06)}
+      100%{transform:scale(1)}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <div class="card stats">
+        <div class="row">
+          <div>
+            <div class="label">COINS</div>
+            <div class="value" id="coins">—</div>
+          </div>
+          <div class="pill" title="Highest coins you’ve reached">
+            🏆 <div><div id="best">—</div><small>best</small></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <div class="label">BET</div>
+            <div class="value" id="bet">—</div>
+          </div>
+          <div class="pill" title="Last win amount">
+            💰 <div><div id="lastWin">0</div><small>last</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rightMini">
+        <div class="toggle" id="autoToggle">
+          <div>
+            <div style="font-weight:900;">Auto Spin</div>
+            <div class="label">keeps spinning</div>
+          </div>
+          <div class="switch" id="autoSwitch" aria-label="Auto Spin switch">
+            <div class="knob"></div>
+          </div>
+        </div>
+
+        <button class="btn small bad" id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="card machine" id="machine">
+      <div class="machineHeader">
+        <div class="title"><span class="dot"></span> Pocket Slots+</div>
+        <div class="msg" id="msg"></div>
+      </div>
+
+      <div class="reelsWrap">
+        <div class="reels" id="reels">
+          <div class="reel"><div class="symbol" id="s0">🍒</div></div>
+          <div class="reel"><div class="symbol" id="s1">🍋</div></div>
+          <div class="reel"><div class="symbol" id="s2">🍇</div></div>
+        </div>
+
+        <div class="metaRow">
+          <div class="meta"><small>STREAK</small> <b id="streak">0</b></div>
+          <div class="meta"><small>MULTI</small> <b id="streakMulti">1.00×</b></div>
+          <div class="meta"><small>JACKPOT×</small> <b id="jackpotMulti">—</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card controls">
+      <div class="betRow">
+        <button class="btn icon" id="minus">−</button>
+
+        <div class="betBox">
+          <div class="label">Tap − / + to change</div>
+          <div class="big"><span>Bet</span> <span id="betBig">—</span></div>
+        </div>
+
+        <button class="btn icon" id="plus">+</button>
+      </div>
+
+      <div class="quick">
+        <button class="btn small" data-bet="1">Bet 1</button>
+        <button class="btn small" data-bet="5">Bet 5</button>
+        <button class="btn small" data-bet="10">Bet 10</button>
+        <button class="btn small" data-bet="25">Bet 25</button>
+			</div>
+			<div class="quick">
+			<button class="btn small" data-bet="50">Bet 50</button>
+			<button class="btn small" data-bet="100">MAX</button>
+         </div>
+      <button class="btn primary wide" id="spinBtn">🎰 SPIN</button>
+
+      <div class="footer">
+        <div class="hint">2-match wins • 3-match jackpots scale by symbol + streak</div>
+        <div id="rtp" class="hint"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // --- Symbol table ---
+  // weight = how common it is
+  // jack = 3-of-a-kind base multiplier (before streak)
+  let spinsSinceJackpot = 0;
+  const SYMBOLS = [
+    { e:"🍒", weight: 14, jack: 4 },   // common
+    { e:"🍋", weight: 13, jack: 5 },
+    { e:"🍇", weight: 12, jack: 6 },
+    { e:"🍉", weight: 11, jack: 7 },
+    { e:"🔔", weight: 9,  jack: 9 },   // uncommon
+    { e:"💎", weight: 6,  jack: 14 },  // rare
+    { e:"7️⃣", weight: 3,  jack: 22 }  // ultra rare
+  ];
+
+  // 2-of-a-kind base multiplier (still boosted by streak)
+  const TWO_MATCH_MULT = 2;
+
+  // streak formula:
+  // streak 0 -> 1.00x
+  // each win adds +0.12x, capped
+  const STREAK_STEP = 0.12;
+  const STREAK_CAP  = 3.00; // max 3x
+
+  const $ = (id) => document.getElementById(id);
+
+  const ui = {
+    coins: $("coins"),
+    bet: $("bet"),
+    betBig: $("betBig"),
+    best: $("best"),
+    lastWin: $("lastWin"),
+    msg: $("msg"),
+    s: [ $("s0"), $("s1"), $("s2") ],
+    spinBtn: $("spinBtn"),
+    minus: $("minus"),
+    plus: $("plus"),
+    machine: $("machine"),
+    autoToggle: $("autoToggle"),
+    autoSwitch: $("autoSwitch"),
+    resetBtn: $("resetBtn"),
+    rtp: $("rtp"),
+    streak: $("streak"),
+    streakMulti: $("streakMulti"),
+    jackpotMulti: $("jackpotMulti")
+  };
+
+  const LS = {
+    coins: "pocketSlotsPlus_coins_v1",
+    best:  "pocketSlotsPlus_best_v1",
+    bet:   "pocketSlotsPlus_bet_v1",
+    streak:"pocketSlotsPlus_streak_v1"
+  };
+
+  let coins = clampInt(parseInt(localStorage.getItem(LS.coins) || "250", 10), 0, 999999);
+  let best  = clampInt(parseInt(localStorage.getItem(LS.best)  || "250", 10), 0, 999999);
+  let bet   = clampInt(parseInt(localStorage.getItem(LS.bet)   || "5", 10), 1, 100);
+  let streak = clampInt(parseInt(localStorage.getItem(LS.streak) || "0", 10), 0, 9999);
+
+  let spinning = false;
+  let auto = false;
+  let autoTimer = null;
+
+  // fun tracker
+  let totalBet = 0;
+  let totalWin = 0;
+
+  function clampInt(n, min, max){
+    if (!Number.isFinite(n)) return min;
+    return Math.max(min, Math.min(max, Math.floor(n)));
+  }
+
+  function save(){
+    localStorage.setItem(LS.coins, String(coins));
+    localStorage.setItem(LS.best, String(best));
+    localStorage.setItem(LS.bet, String(bet));
+    localStorage.setItem(LS.streak, String(streak));
+  }
+
+  function getStreakMultiplier(){
+    const m = 1 + (streak * STREAK_STEP);
+    return Math.min(STREAK_CAP, Math.max(1, m));
+  }
+
+  function render(){
+    ui.coins.textContent = coins.toLocaleString();
+    ui.bet.textContent = bet.toLocaleString();
+    ui.betBig.textContent = bet.toLocaleString();
+    ui.best.textContent = best.toLocaleString();
+
+    ui.streak.textContent = streak.toString();
+    ui.streakMulti.textContent = getStreakMultiplier().toFixed(2) + "×";
+
+    ui.rtp.textContent = totalBet > 0 ? `RTP: ${(100 * (totalWin/totalBet)).toFixed(0)}%` : "RTP: —";
+  }
+
+  function setMsg(text, kind=""){
+    ui.msg.textContent = text;
+    ui.msg.className = "msg " + kind;
+  }
+
+  function pickSymbol(){
+  // After 25 spins without a jackpot, slowly boost odds of rare symbols
+  const boost = Math.min(1.0, Math.max(0, (spinsSinceJackpot - 25) * 0.04)); // 0 → up to 1
+  const boosted = SYMBOLS.map(s => {
+    let w = s.weight;
+    if (s.e === "💎") w = w * (1 + 0.5 * boost);
+    if (s.e === "7️⃣") w = w * (1 + 0.9 * boost);
+    return { ...s, _w: w };
+  });
+
+  const totalW = boosted.reduce((a,s)=>a+s._w,0);
+  let r = Math.random() * totalW;
+  for (const s of boosted){
+    r -= s._w;
+    if (r <= 0) return s.e;
+  }
+  return boosted[0].e;
+}
+
+  function symInfo(emoji){
+    return SYMBOLS.find(s => s.e === emoji) || SYMBOLS[0];
+  }
+
+  function countMatches(a,b,c){
+    if (a===b && b===c) return { type:"3", match:a };
+    if (a===b || a===c) return { type:"2", match:a };
+    if (b===c) return { type:"2", match:b };
+    return { type:"0", match:null };
+  }
+
+  function payoutFor(result){
+    const streakMult = getStreakMultiplier();
+
+    if (result.type === "3"){
+      const jack = symInfo(result.match).jack;
+      ui.jackpotMulti.textContent = jack + "×";
+      return Math.floor(bet * jack * streakMult);
+    }
+
+    ui.jackpotMulti.textContent = "—";
+    if (result.type === "2"){
+      return Math.floor(bet * TWO_MATCH_MULT * streakMult);
+    }
+
+    return 0;
+  }
+
+  function setAuto(on){
+    auto = on;
+    ui.autoSwitch.classList.toggle("on", auto);
+    if (!auto){
+      if (autoTimer) clearTimeout(autoTimer);
+      autoTimer = null;
+    } else {
+      if (!spinning) queueAutoSpin();
+    }
+  }
+
+  function queueAutoSpin(){
+    if (!auto) return;
+    autoTimer = setTimeout(() => {
+      if (!spinning) spin();
+      else queueAutoSpin();
+    }, 450);
+  }
+
+  async function spin(){
+    if (spinning) return;
+
+    if (coins < bet){
+      ui.machine.classList.remove("shake");
+      void ui.machine.offsetWidth;
+      ui.machine.classList.add("shake");
+      setMsg("Not enough coins 😵", "warn");
+      setAuto(false);
+      return;
+    }
+
+    spinning = true;
+    ui.spinBtn.textContent = "SPINNING…";
+    ui.spinBtn.disabled = true;
+
+    coins -= bet;
+    totalBet += bet;
+    save();
+    render();
+    setMsg("Spinning…", "");
+
+    const stops = [650, 850, 1050];
+    ui.s.forEach(el => el.classList.add("spin"));
+
+    const final = [null,null,null];
+    for (let i=0;i<3;i++){
+      await wait(stops[i]);
+      final[i] = pickSymbol();
+      ui.s[i].textContent = final[i];
+      ui.s[i].classList.remove("spin");
+      ui.s[i].classList.add("winPulse");
+      setTimeout(()=>ui.s[i].classList.remove("winPulse"), 220);
+    }
+
+    const res = countMatches(final[0], final[1], final[2]);
+    if (res.type === "3")                      	 	spinsSinceJackpot = 0;
+    else spinsSinceJackpot++;
+    const win = payoutFor(res);
+
+    if (win > 0){
+      streak += 1; // ✅ streak builds on any win (2-match or 3-match)
+      coins += win;
+      totalWin += win;
+      ui.lastWin.textContent = win.toLocaleString();
+
+      const sm = getStreakMultiplier();
+      if (res.type === "3"){
+        const jack = symInfo(res.match).jack;
+        setMsg(`JACKPOT! ${res.match}${res.match}${res.match}  (+${win})  [${jack}× • ${sm.toFixed(2)}×]`, "win");
+      } else {
+        setMsg(`Win! (+${win})  [${TWO_MATCH_MULT}× • ${sm.toFixed(2)}×]`, "win");
+      }
+    } else {
+      streak = 0; // ❌ streak resets on loss
+      ui.lastWin.textContent = "0";
+      setMsg("No luck. Streak reset 😈", "lose");
+    }
+
+    if (coins > best) best = coins;
+    save();
+    render();
+
+    spinning = false;
+    ui.spinBtn.textContent = "🎰 SPIN";
+    ui.spinBtn.disabled = false;
+
+    if (auto) queueAutoSpin();
+  }
+
+  function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  function setBet(newBet){
+    bet = clampInt(newBet, 1, 100);
+    save();
+    render();
+  }
+
+  function resetAll(){
+    coins = 250;
+    best = 250;
+    bet = 5;
+    streak = 0;
+    totalBet = 0;
+    totalWin = 0;
+    ui.lastWin.textContent = "0";
+    ui.jackpotMulti.textContent = "—";
+    setMsg("Reset complete.", "");
+    setAuto(false);
+    save();
+    render();
+  }
+
+  // events
+  ui.spinBtn.addEventListener("click", spin);
+  ui.minus.addEventListener("click", () => setBet(bet - 1));
+  ui.plus.addEventListener("click", () => setBet(bet + 1));
+
+  document.querySelectorAll("[data-bet]").forEach(b => {
+    b.addEventListener("click", () => setBet(parseInt(b.getAttribute("data-bet"), 10)));
+  });
+
+  ui.autoToggle.addEventListener("click", () => setAuto(!auto));
+  ui.resetBtn.addEventListener("click", resetAll);
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); spin(); }
+    if (e.key === "ArrowUp") setBet(bet + 1);
+    if (e.key === "ArrowDown") setBet(bet - 1);
+  });
+
+  render();
+  setMsg("Tap SPIN to start 🎲", "");
+})();
+</script>
+</body>
+</html>
